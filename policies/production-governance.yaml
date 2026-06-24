@@ -1,0 +1,16 @@
+policies:
+  - id: no_plaintext_secrets
+    enforce: hard
+    rule: "No secrets in repository files except placeholder values in *.example files."
+
+  - id: health_gate_required
+    enforce: hard
+    rule: "Deployment is successful only if API health endpoint returns 200."
+
+  - id: bootstrap_admin_required
+    enforce: hard
+    rule: "Initial admin must be created via bootstrap_admin utility or approved out-of-band process."
+
+  - id: iteration_log_required
+    enforce: hard
+    rule: "Each deployment-oriented iteration must update raw/iteration_log.md with outcomes and residual risk."

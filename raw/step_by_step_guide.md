@@ -185,6 +185,29 @@ volumes:
 
 > **Note:** There is no Ollama service. LLM calls are made to the Kimi API using the `KIMI_API_KEY`.
 
+## Production on Shared Host (Existing Traefik + Existing PostgreSQL)
+
+If the host already runs shared infrastructure, use existing-infra deployment mode so this project does **not** create a new Traefik or PostgreSQL container.
+
+1. Create `.env` from `.env.podcast.digity.dev.example`.
+2. Set `EXTERNAL_DATABASE_URL` to your existing PostgreSQL service.
+3. Set `TRAEFIK_DOCKER_NETWORK` to the existing shared Traefik network (default is `proxy`).
+4. Deploy with:
+
+```bash
+bash scripts/deploy-existing-infra.sh
+# or
+make deploy-existing-infra
+```
+
+This mode uses `docker-compose.existing-infra.yml` and starts only:
+- `api`
+- `app`
+- `neo4j`
+- `redis`
+
+It intentionally does not define or launch `traefik` and `postgres` services.
+
 ---
 
 ## Step 4: Verify the API
@@ -205,9 +228,21 @@ curl http://localhost:8000/
 
 ## Step 5: Log In and Create Content
 
-### 5.1 Authenticate
+### 5.1 Bootstrap First Admin (one-time)
 
-The first user must be created directly in the database (or via a seed script). Once a user exists:
+Before first login, create the initial admin user:
+
+```bash
+cd api
+python bootstrap_admin.py \
+  --email admin@digity.dev \
+  --name "Podcast Admin" \
+  --password 'change-me-strong'
+```
+
+### 5.2 Authenticate
+
+Once the admin user exists:
 
 ```bash
 # Log in and get a JWT token
@@ -219,7 +254,7 @@ curl -X POST http://localhost:8000/api/auth/login \
 export TOKEN="<access_token>"
 ```
 
-### 5.2 Create a Podcast
+### 5.3 Create a Podcast
 
 ```bash
 curl -X POST http://localhost:8000/api/podcasts \
@@ -236,7 +271,7 @@ curl -X POST http://localhost:8000/api/podcasts \
 export PODCAST_ID="<podcast-uuid>"
 ```
 
-### 5.3 Create an Episode
+### 5.4 Create an Episode
 
 ```bash
 curl -X POST "http://localhost:8000/api/podcasts/${PODCAST_ID}/episodes" \

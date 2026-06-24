@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies (not install, ci for clean lockfile-based install)
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # =========================
 # Build Stage

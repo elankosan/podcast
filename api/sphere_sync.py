@@ -8,7 +8,27 @@ import os
 import re
 from typing import Any, Dict, List, Optional
 
-from maf.integration import Neo4jStateStore
+try:
+    from maf.integration import Neo4jStateStore
+except Exception:
+    from neo4j import GraphDatabase
+
+    class Neo4jStateStore:
+        def __init__(self, uri: str, auth: tuple[str, str], database: str = "neo4j"):
+            self.database = database
+            self._connected = False
+            self._driver = None
+            try:
+                self._driver = GraphDatabase.driver(uri, auth=auth)
+                self._driver.verify_connectivity()
+                self._connected = True
+            except Exception:
+                self._connected = False
+
+        def health_check(self) -> Dict[str, Any]:
+            if self._connected:
+                return {"status": "healthy"}
+            return {"status": "unhealthy", "reason": "neo4j unavailable"}
 
 
 class PodcastSphereSync:

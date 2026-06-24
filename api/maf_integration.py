@@ -18,11 +18,17 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from maf import Blueprint
-from maf.runtime import LocalRuntime
-from maf.runtime.build_logger import BuildLogger
-
-from api.agents import ResearchAgent, ScriptAgent, TranslationAgent
+try:
+    from maf import Blueprint
+    from maf.runtime import LocalRuntime
+    from maf.runtime.build_logger import BuildLogger
+    from api.agents import ResearchAgent, ScriptAgent, TranslationAgent
+    MAF_AVAILABLE = True
+except Exception:
+    Blueprint = None
+    LocalRuntime = None
+    BuildLogger = None
+    MAF_AVAILABLE = False
 
 
 class PodcastWorkforce:
@@ -31,8 +37,19 @@ class PodcastWorkforce:
     def __init__(
         self,
         workforce_path: str = None,
-        log_dir: str = "runtime_logs",
+        log_dir: str = "/tmp/runtime_logs",
     ) -> None:
+        self.available = MAF_AVAILABLE
+        if not self.available:
+            self.workforce_path = None
+            self.log_dir = Path(log_dir)
+            self.log_dir.mkdir(parents=True, exist_ok=True)
+            self.blueprint = None
+            self.manifest = None
+            self.runtime = None
+            self.logger = None
+            return
+
         if workforce_path is None:
             workforce_path = str(Path(__file__).parent.parent / "workforce.yaml")
         self.workforce_path = Path(workforce_path)
@@ -67,6 +84,13 @@ class PodcastWorkforce:
         language: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute a specific MAF phase for an episode by running the right agent."""
+        if not self.available:
+            return {
+                "success": False,
+                "error": "MAF runtime unavailable in this deployment. Install maf package to enable agent workflows.",
+                "episode_id": episode_id,
+                "phase": phase,
+            }
         
         # Phase -> Agent ID mapping
         PHASE_AGENTS = {

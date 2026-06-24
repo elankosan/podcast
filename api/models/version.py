@@ -18,7 +18,7 @@ class Version(Base):
     version_number = Column(Integer, nullable=False)
     version_type = Column(String, nullable=False)  # research, script, translation
     content = Column(JSONB, default=dict)
-    metadata = Column(JSONB, default=dict)  # language, source_version, etc.
+    metadata_json = Column("metadata", JSONB, default=dict)  # language, source_version, etc.
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     

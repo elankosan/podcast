@@ -1,0 +1,70 @@
+# Project root .dockerignore — keeps Docker build context lean
+# when building from context: .
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+raw/
+README.md
+LICENSE
+CHANGELOG.md
+
+# Node.js
+app/node_modules/
+app/.next/
+app/out/
+app/npm-debug.log*
+app/yarn-debug.log*
+app/yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+runtime_logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# CI/CD
+.github/
+
+# Scripts (not needed in images)
+scripts/*.sh
+
+# Nginx (alternative config, not used by Traefik)
+nginx/
+
+# Tests
+tests/
+
+# Docker files themselves
+docker-compose*.yml
+Makefile

@@ -1,4 +1,4 @@
-.PHONY: dev prod test lint build migrate backup clean
+.PHONY: dev prod test lint build migrate backup clean bootstrap-admin deploy-digity deploy-existing-infra
 
 # === Development ===
 dev:
@@ -6,6 +6,12 @@ dev:
 
 prod:
 	docker compose -f docker-compose.prod.yml up -d --build
+
+deploy-digity:
+	bash scripts/deploy-podcast-digity.sh
+
+deploy-existing-infra:
+	bash scripts/deploy-existing-infra.sh
 
 # === Testing ===
 test:
@@ -25,6 +31,9 @@ build:
 # === Database ===
 migrate:
 	cd api && alembic upgrade head
+
+bootstrap-admin:
+	cd api && python bootstrap_admin.py --email "$${EMAIL}" --name "$${NAME}" --password "$${PASSWORD}"
 
 # === Backup ===
 backup:

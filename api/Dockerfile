@@ -19,7 +19,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install dependencies into /root/.local
 WORKDIR /build
-COPY requirements.txt .
+COPY api/requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 # =========================
@@ -41,13 +41,20 @@ COPY --from=builder /root/.local /home/appuser/.local
 RUN chown -R appuser:appgroup /home/appuser/.local
 
 ENV PATH=/home/appuser/.local/bin:$PATH \
+    PYTHONPATH=/app \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Copy MAF framework (vendored dependency)
+COPY --chown=appuser:appgroup maf/ ./maf/
+
 # Copy application code
-COPY --chown=appuser:appgroup . .
+COPY --chown=appuser:appgroup api/ ./api/
+
+# Switch to app directory
+WORKDIR /app/api
 
 # Switch to non-root user
 USER appuser

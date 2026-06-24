@@ -84,7 +84,7 @@ async def translate_episode(
                 version_number=next_version,
                 version_type="translation",
                 content=translation,
-                metadata={"language": language},
+                metadata_json={"language": language},
             )
             db.add(version)
             db.commit()

@@ -190,3 +190,65 @@ None yet. Adjustments will be recorded here based on Test Agent, Review Agent, a
 5. Add publishing pipeline (RSS, Markdown, PDF export)
 6. Add admin dashboard for user management
 7. Performance testing with k6 or locust
+
+
+### Iteration 3: Source-of-Truth Gap Closure + Domain Deployment Prep (2026-06-24)
+
+**Trigger:** User requested raw/ as source of truth, production gap closure, required agents with skills, iterative delivery, and deployment target `podcast.digity.dev`.
+
+**Actions Completed:**
+- Fixed frontend/backend auth contract mismatch: frontend now uses OAuth2 form payload (`application/x-www-form-urlencoded`) for `/api/auth/login`.
+- Added missing endpoint `GET /api/podcasts/{id}/episodes` to match UI contract used by podcast detail page.
+- Added first-admin bootstrap utility: `api/bootstrap_admin.py` (idempotent admin creation/update flow).
+- Added production agent pack:
+  - `agents/production_architect.agent.md`
+  - `agents/deployment_engineer.agent.md`
+  - `agents/qa_guard.agent.md`
+- Added production skills:
+  - `skills/production/readiness-checklist.md`
+  - `skills/deployment/hetzner-traefik.md`
+  - `skills/testing/release-gate.md`
+- Added governance policy file: `policies/production-governance.yaml`.
+- Added dedicated production workflow definition: `workforce.production.yaml`.
+- Added domain-specific environment template: `.env.podcast.digity.dev.example`.
+- Added domain deployment wrapper: `scripts/deploy-podcast-digity.sh`.
+- Added convenience Make targets: `deploy-digity`, `bootstrap-admin`.
+- Updated source-of-truth guide with concrete first-admin bootstrap command.
+
+**Current Deployment Status (`podcast.digity.dev`):**
+- Deployment automation is now domain-ready in repo.
+- Live deployment execution still requires runtime secrets and server access (`KIMI_API_KEY`, passwords, SSH/GitHub secrets).
+
+**Risks / Open Items:**
+1. Full production deployment cannot be completed without real secrets and target host access.
+2. End-to-end runtime validation against live domain pending after secrets are provisioned.
+
+**Next Iteration Proposal (Iteration 4):**
+1. Provision `.env` from `.env.podcast.digity.dev.example` with real values on target server.
+2. Run `scripts/deploy-podcast-digity.sh` on target host.
+3. Bootstrap admin and execute smoke tests on live domain.
+4. Record health evidence and rollback validation in this log.
+
+
+### Iteration 4: Shared Infrastructure Deployment Mode (2026-06-24)
+
+**Trigger:** User requested no new Traefik or PostgreSQL containers and to reuse existing infrastructure on this machine.
+
+**Actions Completed:**
+- Inspected host runtime infrastructure and confirmed existing shared Traefik (`shared-traefik`) and existing Postgres containers are running.
+- Added `docker-compose.existing-infra.yml` with services limited to `api`, `app`, `neo4j`, and `redis`.
+- Removed project-owned proxy/database from this deployment path by design.
+- Added external infra deployment script: `scripts/deploy-existing-infra.sh`.
+  - Requires `EXTERNAL_DATABASE_URL`.
+  - Requires existing proxy network (`TRAEFIK_DOCKER_NETWORK`, default `proxy`).
+  - Runs Alembic migrations against external PostgreSQL.
+- Updated `scripts/deploy-podcast-digity.sh` to call existing-infra deployment script.
+- Updated `.env.podcast.digity.dev.example` with `EXTERNAL_DATABASE_URL`, `TRAEFIK_DOCKER_NETWORK`, and `TRAEFIK_CERT_RESOLVER`.
+- Added Make target: `deploy-existing-infra`.
+
+**Result:**
+- Project is now deployable in shared-host mode without creating new Traefik or PostgreSQL containers.
+
+**Open Items:**
+1. Populate real `.env` values (external DB credentials and domain secrets).
+2. Execute deployment and verify live routing through shared Traefik for `podcast.digity.dev` and `api.podcast.digity.dev`.

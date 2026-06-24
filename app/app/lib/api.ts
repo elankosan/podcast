@@ -46,6 +46,11 @@ async function apiFetch(path: string, options: RequestInit = {}) {
     },
   });
   if (!res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      throw new Error(data.detail || `HTTP ${res.status}`);
+    }
     const err = await res.text();
     throw new Error(err || `HTTP ${res.status}`);
   }
@@ -54,11 +59,16 @@ async function apiFetch(path: string, options: RequestInit = {}) {
 
 export const api = {
   auth: {
-    login: (email: string, password: string) =>
-      apiFetch('/api/auth/login', {
+    login: (email: string, password: string) => {
+      const form = new URLSearchParams();
+      form.set('username', email);
+      form.set('password', password);
+      return apiFetch('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
-      }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      });
+    },
     me: () => apiFetch('/api/auth/me'),
   },
   podcasts: {

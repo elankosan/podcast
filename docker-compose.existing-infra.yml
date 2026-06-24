@@ -1,0 +1,116 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: multi-lingual-podcast-api
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${EXTERNAL_DATABASE_URL}
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - REDIS_URL=redis://redis:6379/0
+      - KIMI_API_KEY=${KIMI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+      - ALLOWED_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./workforce.yaml:/app/workforce.yaml:ro
+    networks:
+      - backend
+      - proxy
+      - external_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_DOCKER_NETWORK:-proxy}"
+      - "traefik.http.routers.podcast-api.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.podcast-api.entrypoints=websecure"
+      - "traefik.http.routers.podcast-api.tls=true"
+      - "traefik.http.routers.podcast-api.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}"
+      - "traefik.http.services.podcast-api.loadbalancer.server.port=8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: multi-lingual-podcast-app
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=https://api.${DOMAIN}
+      - NODE_ENV=production
+    depends_on:
+      - api
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_DOCKER_NETWORK:-proxy}"
+      - "traefik.http.routers.podcast-app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.podcast-app.entrypoints=websecure"
+      - "traefik.http.routers.podcast-app.tls=true"
+      - "traefik.http.routers.podcast-app.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}"
+      - "traefik.http.services.podcast-app.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: multi-lingual-podcast-neo4j
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_memory_heap_initial__size=512m
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: multi-lingual-podcast-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+networks:
+  backend:
+    driver: bridge
+  proxy:
+    external: true
+    name: ${TRAEFIK_DOCKER_NETWORK:-proxy}
+  external_db:
+    external: true
+    name: ${EXTERNAL_DB_NETWORK:-promethea_promethea_internal}
+
+volumes:
+  neo4j_data:

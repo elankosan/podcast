@@ -1,0 +1,59 @@
+workflow_id: "wf_production_readiness"
+name: "Production Readiness and Deployment"
+version: "1.0.0"
+description: "Iterative workflow to harden, validate, and deploy multi-lingual-podcast."
+
+input_schema:
+  type: object
+  required: [iteration]
+  properties:
+    iteration:
+      type: string
+      description: "Iteration id, e.g. 3"
+    target_domain:
+      type: string
+      default: "podcast.digity.dev"
+    action:
+      type: string
+      enum: ["contract-fix", "hardening", "deploy", "verify"]
+
+agents:
+  - agent_id: production_architect
+    role: architect
+    spec_file: agents/production_architect.agent.md
+    skills:
+      - skills/production/readiness-checklist.md
+      - skills/testing/release-gate.md
+
+  - agent_id: deployment_engineer
+    role: deployer
+    spec_file: agents/deployment_engineer.agent.md
+    skills:
+      - skills/deployment/hetzner-traefik.md
+      - skills/testing/release-gate.md
+
+  - agent_id: qa_guard
+    role: tester
+    spec_file: agents/qa_guard.agent.md
+    skills:
+      - skills/testing/release-gate.md
+      - skills/production/readiness-checklist.md
+
+orchestrator:
+  type: sequential
+  phases:
+    - phase_id: contract_fixes
+      trigger: "input.action == 'contract-fix'"
+      agents: [production_architect, qa_guard]
+    - phase_id: hardening
+      trigger: "input.action == 'hardening'"
+      agents: [production_architect, deployment_engineer, qa_guard]
+    - phase_id: deploy
+      trigger: "input.action == 'deploy'"
+      agents: [deployment_engineer, qa_guard]
+    - phase_id: verify
+      trigger: "input.action == 'verify'"
+      agents: [qa_guard]
+
+policy_files:
+  - policies/production-governance.yaml

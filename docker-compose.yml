@@ -13,7 +13,9 @@ services:
 
   # --- Backend (FastAPI) ---
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -27,10 +29,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - MAF_WORKFORCE_PATH=/app/workforce.yaml
     volumes:
+      - ./api:/app/api
+      - ./maf:/app/maf
       - ./workforce.yaml:/app/workforce.yaml
-      - ./agents:/app/agents
-      - ./skills:/app/skills
-      - ./policies:/app/policies
       - ./integrations:/app/integrations
     depends_on:
       - postgres

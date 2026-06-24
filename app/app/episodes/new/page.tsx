@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
 
-export default function NewEpisodePage() {
+function NewEpisodeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const podcastId = searchParams.get('podcast') || '';
@@ -66,5 +66,13 @@ export default function NewEpisodePage() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function NewEpisodePage() {
+  return (
+    <Suspense fallback={<main className="p-8 max-w-2xl mx-auto">Loading...</main>}>
+      <NewEpisodeForm />
+    </Suspense>
   );
 }

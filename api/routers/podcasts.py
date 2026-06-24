@@ -43,6 +43,24 @@ async def get_podcast(podcast_id: UUID, db: Session = Depends(get_db), current_u
     return {"id": str(podcast.id), "title": podcast.title, "description": podcast.description, "episodes": episodes}
 
 
+@router.get("/{podcast_id}/episodes")
+async def list_podcast_episodes(podcast_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    podcast = db.query(Podcast).filter(Podcast.id == podcast_id, Podcast.owner_id == current_user.id).first()
+    if not podcast:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+    return [
+        {
+            "id": str(e.id),
+            "podcast_id": str(e.podcast_id),
+            "title": e.title,
+            "vision": e.vision,
+            "status": e.status,
+            "created_at": e.created_at,
+        }
+        for e in podcast.episodes
+    ]
+
+
 @router.put("/{podcast_id}")
 async def update_podcast(podcast_id: UUID, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     podcast = db.query(Podcast).filter(Podcast.id == podcast_id, Podcast.owner_id == current_user.id).first()
