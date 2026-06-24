@@ -1,5 +1,6 @@
 """Tests for Phase 1: Foundation."""
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -18,8 +19,11 @@ def _dummy_kimi_chat(self, prompt, system_prompt=None):
 
 patch("maf.integration.kimi_client.KimiClient.chat", _dummy_kimi_chat).start()
 
-# Use a test database
-TEST_DATABASE_URL = "postgresql://postgres:password@localhost:5432/podcast_test"
+# Use a test database (honour CI DATABASE_URL if provided, otherwise local default).
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    os.environ.get("DATABASE_URL", "postgresql://postgres:password@localhost:5432/podcast_test"),
+)
 engine = create_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
