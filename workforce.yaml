@@ -1,0 +1,283 @@
+workflow_id: "wf_build_multi_lingual_podcast"
+name: "Build Multi-Lingual Podcast Application"
+version: "1.0.0"
+description: "MAF workforce program to build the multi-lingual-podcast application using sphere infrastructure."
+input_schema:
+  type: "object"
+  required: ["phase"]
+  properties:
+    phase:
+      type: "string"
+      enum: ["1", "2", "3", "4", "5", "6", "7", "8"]
+      description: "Which phase to execute (1-8)"
+    action:
+      type: "string"
+      description: "Specific action within the phase"
+    vision:
+      type: "string"
+      description: "User vision for the episode (when creating content)"
+    podcast_id:
+      type: "string"
+      description: "Podcast ID for context"
+    episode_id:
+      type: "string"
+      description: "Episode ID for context"
+
+output_schema:
+  type: "object"
+  properties:
+    result:
+      type: "string"
+    artifacts:
+      type: "array"
+      items:
+        type: "string"
+    trace_id:
+      type: "string"
+    cost:
+      type: "object"
+
+agents:
+  - agent_id: "podcast_planner"
+    name: "Podcast Planner"
+    role: "planner"
+    version: "1.0.0"
+    skills:
+      - "decompose_vision"
+      - "create_task_list"
+      - "estimate_effort"
+    entry_point: "decompose"
+    type: "reasoning"
+    description: "Decomposes the user's vision into actionable tasks for the podcast application build"
+
+  - agent_id: "podcast_architect"
+    name: "Podcast Architect"
+    role: "architect"
+    version: "1.0.0"
+    skills:
+      - "design_schema"
+      - "design_api"
+      - "design_ui"
+      - "validate_architecture"
+    entry_point: "design"
+    type: "reasoning"
+    description: "Designs the system architecture, database schema, API contracts, and UI components"
+
+  - agent_id: "podcast_researcher"
+    name: "Podcast Researcher"
+    role: "researcher"
+    version: "1.0.0"
+    skills:
+      - "web_search"
+      - "rss_read"
+      - "summarize_source"
+      - "validate_source"
+    entry_point: "research"
+    type: "hybrid"
+    description: "Researches topics for podcast episodes from web, RSS, and knowledge base"
+
+  - agent_id: "podcast_synthesizer"
+    name: "Podcast Synthesizer"
+    role: "synthesizer"
+    version: "1.0.0"
+    skills:
+      - "map_arguments"
+      - "weight_evidence"
+      - "create_narrative"
+      - "check_consistency"
+    entry_point: "synthesize"
+    type: "reasoning"
+    description: "Synthesizes research findings into coherent arguments and narratives"
+
+  - agent_id: "podcast_scriptwriter"
+    name: "Podcast Scriptwriter"
+    role: "scriptwriter"
+    version: "1.0.0"
+    skills:
+      - "format_radio"
+      - "add_timing"
+      - "add_transitions"
+      - "add_host_notes"
+    entry_point: "write"
+    type: "hybrid"
+    description: "Formats content into radio-ready scripts with timing and segments"
+
+  - agent_id: "podcast_stylist"
+    name: "Podcast Stylist"
+    role: "stylist"
+    version: "1.0.0"
+    skills:
+      - "add_humor"
+      - "add_metaphors"
+      - "add_cultural_refs"
+      - "adjust_tone"
+    entry_point: "enhance"
+    type: "reasoning"
+    description: "Enhances scripts with humor, metaphors, and cultural references"
+
+  - agent_id: "podcast_translator"
+    name: "Podcast Translator"
+    role: "translator"
+    version: "1.0.0"
+    skills:
+      - "translate_text"
+      - "adapt_culture"
+      - "replace_idioms"
+      - "review_translation"
+    entry_point: "translate"
+    type: "hybrid"
+    description: "Translates and culturally adapts scripts to target languages"
+
+  - agent_id: "podcast_executor"
+    name: "Podcast Executor"
+    role: "executor"
+    version: "1.0.0"
+    skills:
+      - "create_file"
+      - "edit_file"
+      - "run_command"
+      - "verify_output"
+    entry_point: "execute"
+    type: "deterministic"
+    description: "Creates files, runs commands, and verifies outputs for the application build"
+
+  - agent_id: "podcast_reviewer"
+    name: "Podcast Reviewer"
+    role: "reviewer"
+    version: "1.0.0"
+    skills:
+      - "review_code"
+      - "review_architecture"
+      - "review_content"
+      - "check_compliance"
+    entry_point: "review"
+    type: "hybrid"
+    description: "Reviews code, architecture, and content for quality and compliance"
+
+  - agent_id: "podcast_tester"
+    name: "Podcast Test Agent"
+    role: "tester"
+    version: "1.0.0"
+    skills:
+      - "write_tests"
+      - "run_tests"
+      - "check_coverage"
+      - "report_bugs"
+    entry_point: "test"
+    type: "hybrid"
+    description: "Writes and runs tests for all components of the application"
+
+  - agent_id: "podcast_cost"
+    name: "Podcast Cost Agent"
+    role: "cost_tracker"
+    version: "1.0.0"
+    skills:
+      - "track_tokens"
+      - "estimate_cost"
+      - "report_budget"
+      - "alert_threshold"
+    entry_point: "track"
+    type: "deterministic"
+    description: "Tracks token usage and costs across all podcast operations"
+
+  - agent_id: "podcast_governance"
+    name: "Podcast Governance Agent"
+    role: "governance"
+    version: "1.0.0"
+    skills:
+      - "enforce_policy"
+      - "check_privacy"
+      - "check_copyright"
+      - "audit_trail"
+    entry_point: "govern"
+    type: "deterministic"
+    description: "Enforces content policies, privacy, and copyright compliance"
+
+orchestrator:
+  type: "sequential"
+  max_parallel_agents: 3
+  retry_policy:
+    max_retries: 3
+    backoff: "exponential"
+  phases:
+    - phase_id: "phase_1"
+      name: "Foundation"
+      trigger: "input.phase == '1'"
+      agents: ["podcast_planner", "podcast_architect", "podcast_executor", "podcast_tester"]
+    - phase_id: "phase_2"
+      name: "Core API"
+      trigger: "input.phase == '2'"
+      agents: ["podcast_planner", "podcast_architect", "podcast_executor", "podcast_tester", "podcast_reviewer"]
+    - phase_id: "phase_3"
+      name: "Research"
+      trigger: "input.phase == '3'"
+      agents: ["podcast_planner", "podcast_researcher", "podcast_synthesizer", "podcast_tester"]
+    - phase_id: "phase_4"
+      name: "Script"
+      trigger: "input.phase == '4'"
+      agents: ["podcast_planner", "podcast_scriptwriter", "podcast_stylist", "podcast_tester", "podcast_reviewer"]
+    - phase_id: "phase_5"
+      name: "Translation"
+      trigger: "input.phase == '5'"
+      agents: ["podcast_planner", "podcast_translator", "podcast_reviewer", "podcast_tester"]
+    - phase_id: "phase_6"
+      name: "UI"
+      trigger: "input.phase == '6'"
+      agents: ["podcast_planner", "podcast_architect", "podcast_executor", "podcast_tester"]
+    - phase_id: "phase_7"
+      name: "Integration"
+      trigger: "input.phase == '7'"
+      agents: ["podcast_planner", "podcast_executor", "podcast_tester", "podcast_reviewer"]
+    - phase_id: "phase_8"
+      name: "Testing & Deployment"
+      trigger: "input.phase == '8'"
+      agents: ["podcast_planner", "podcast_tester", "podcast_reviewer", "podcast_governance"]
+
+policies:
+  - policy_id: "podcast_privacy"
+    level: 2
+    statement: "User research data and scripts are transmitted to Kimi API (external LLM provider). Users must be informed and provide explicit consent. API key is never hardcoded and read from KIMI_API_KEY environment variable."
+    enforce: "hard"
+  - policy_id: "podcast_cost"
+    level: 3
+    statement: "No single episode may exceed $10 in LLM costs"
+    enforce: "soft"
+    threshold: 10.0
+  - policy_id: "podcast_content"
+    level: 2
+    statement: "Generated content must not include hate speech, misinformation, or copyrighted material without attribution"
+    enforce: "hard"
+  - policy_id: "podcast_copyright"
+    level: 2
+    statement: "All sources must be attributed; direct quotes must be marked"
+    enforce: "hard"
+
+integrations:
+  - integration_id: "neo4j_sphere"
+    type: "neo4j"
+    config:
+      uri: "bolt://localhost:7687"
+      database: "podcast"
+  - integration_id: "kimi_llm"
+    type: "mcp"
+    config:
+      protocol: "http"
+      url: "https://api.moonshot.cn/v1"
+      # API key is read from KIMI_API_KEY environment variable
+      # Do NOT hardcode credentials here
+  - integration_id: "filesystem"
+    type: "mcp"
+    config:
+      protocol: "stdio"
+      command: ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/data/podcast"]
+  - integration_id: "web_search"
+    type: "mcp"
+    config:
+      protocol: "http"
+      url: "http://localhost:8080"
+
+meta:
+  version: "1.0.0"
+  created_by: "MAF Workforce"
+  target_version: "1.0.0"
+  sphere_project: "multi-lingual-podcast"

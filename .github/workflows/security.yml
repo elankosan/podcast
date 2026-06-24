@@ -1,0 +1,112 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 06:00 UTC
+
+jobs:
+  trivy-scan:
+    name: Trivy Docker Image Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t maf-podcast-api:latest ./api
+
+      - name: Build APP image
+        run: docker build -t maf-podcast-app:latest ./app
+
+      - name: Run Trivy scan on API
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: maf-podcast-api:latest
+          format: sarif
+          output: trivy-api-results.sarif
+
+      - name: Run Trivy scan on APP
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: maf-podcast-app:latest
+          format: sarif
+          output: trivy-app-results.sarif
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-api-results.sarif
+          category: trivy-api
+
+      - name: Upload Trivy results (App)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-app-results.sarif
+          category: trivy-app
+
+  python-dependency-audit:
+    name: Python Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Run pip-audit
+        run: |
+          pip-audit --requirement api/requirements.txt --format=markdown --output=pip-audit-report.md || true
+          cat pip-audit-report.md
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.md
+
+  sast-python:
+    name: SAST (Python)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit[toml]
+
+      - name: Run Bandit
+        run: |
+          bandit -r api/ -f json -o bandit-report.json || true
+          bandit -r api/ -f screen
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.json
