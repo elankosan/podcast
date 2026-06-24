@@ -18,7 +18,7 @@ class Episode(Base):
     title = Column(String, nullable=False)
     vision = Column(Text)
     status = Column(String, default="draft")  # draft, researching, scripting, translating, published
-    current_version_id = Column(UUID(as_uuid=True), ForeignKey("versions.id"), nullable=True)
+    current_version_id = Column(UUID(as_uuid=True), ForeignKey("versions.id", use_alter=True, name="fk_episodes_current_version"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     

@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS versions (
     version_number INTEGER NOT NULL,
     version_type VARCHAR(50) NOT NULL,
     content JSONB DEFAULT '{}',
+    metadata JSONB DEFAULT '{}',
     created_by UUID REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

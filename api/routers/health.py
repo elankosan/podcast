@@ -62,9 +62,9 @@ async def health_check():
     )
 
     return {
-        "status": "healthy" if all_healthy else "degraded",
+        "status": "ok" if all_healthy else "degraded",
         "services": {
-            "api": {"status": "healthy"},
+            "api": {"status": "ok"},
             "postgres": postgres_status,
             "redis": redis_status,
             "neo4j": neo4j_status,

@@ -44,10 +44,12 @@ class Settings(BaseSettings):
 
     # MAF
     MAF_WORKFORCE_PATH: str = "workforce.yaml"
+    RUNTIME_LOGS_DIR: str = "/tmp/runtime_logs"
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
     @model_validator(mode="after")
     def validate_secret_key(self):

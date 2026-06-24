@@ -8,6 +8,8 @@ import os
 import re
 from typing import Any, Dict, List, Optional
 
+from api.config import settings
+
 try:
     from maf.integration import Neo4jStateStore
 except Exception:
@@ -31,16 +33,28 @@ except Exception:
             return {"status": "unhealthy", "reason": "neo4j unavailable"}
 
 
+def _parse_neo4j_auth(auth_str: Optional[str]) -> tuple[str, str]:
+    """Parse 'user/password' into (user, password)."""
+    if auth_str and "/" in auth_str:
+        user, password = auth_str.split("/", 1)
+        return user, password
+    return "neo4j", "password"
+
+
 class PodcastSphereSync:
     """Syncs podcast episodes, topics, and research to the sphere knowledge graph."""
 
     def __init__(self) -> None:
+        # Prefer explicit env vars, fall back to pydantic settings (which already reads env).
+        uri = os.environ.get("NEO4J_URI") or settings.NEO4J_URI
+        user = os.environ.get("NEO4J_USER")
+        password = os.environ.get("NEO4J_PASSWORD")
+        if user is None or password is None:
+            auth_str = os.environ.get("NEO4J_AUTH") or settings.NEO4J_AUTH
+            user, password = _parse_neo4j_auth(auth_str)
         self.store = Neo4jStateStore(
-            uri=os.environ.get("NEO4J_URI", "bolt://neo4j:7687"),
-            auth=(
-                os.environ.get("NEO4J_USER", "neo4j"),
-                os.environ.get("NEO4J_PASSWORD", "password"),
-            ),
+            uri=uri,
+            auth=(user, password),
         )
 
     def sync_episode(
@@ -201,7 +215,7 @@ class PodcastSphereSync:
             "whysoever", "wherefore", "therefore", "whereat", "thereat", "wherein", "therein",
             "whereon", "thereon", "whereof", "thereof", "whereby", "thereby", "whereto", "thereto",
             "whereunto", "thereunto", "wherewith", "therewith", "wherefrom", "therefrom", "wherewithal",
-            "therewithal", "hereabout", "thereabout", "whereabout", "hereafter", "thereafter",
+            "therewithal", "whereabout", "hereabout", "thereabout", "whereabout", "hereafter", "thereafter",
             "wherebefore", "therebefore", "herein", "therein", "wherein", "hereinto", "thereinto",
             "whereinto", "hereof", "thereof", "whereof", "hereon", "thereon", "whereon", "hereto",
             "thereto", "whereto", "hereunder", "thereunder", "whereunder", "hereupon", "thereupon",

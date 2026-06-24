@@ -4,10 +4,19 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from unittest.mock import patch
 
 from api.main import app
 from api.database import Base, get_db
 from api.config import settings
+
+
+# Patch Kimi LLM calls so agent workflows run without a real API key in CI/tests.
+def _dummy_kimi_chat(self, prompt, system_prompt=None):
+    return f"Dummy LLM response for: {prompt[:80]}"
+
+
+patch("maf.integration.kimi_client.KimiClient.chat", _dummy_kimi_chat).start()
 
 # Use a test database
 TEST_DATABASE_URL = "postgresql://postgres:password@localhost:5432/podcast_test"
@@ -45,7 +54,7 @@ class TestAuth:
     def test_login(self, setup_db):
         # Create a user first
         response = client.post(
-            "/api/admin/users",
+            "/api/auth/register",
             json={"email": "test@example.com", "name": "Test User", "password": "password123", "role": "host"},
         )
         assert response.status_code == 200

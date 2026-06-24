@@ -12,6 +12,25 @@ from api.models.user import User
 router = APIRouter()
 
 
+@router.post("/register")
+async def register(user_data: dict, db: Session = Depends(get_db)):
+    """Register a new user (public endpoint)."""
+    existing = db.query(User).filter(User.email == user_data["email"]).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    db_user = User(
+        email=user_data["email"],
+        name=user_data["name"],
+        hashed_password=get_password_hash(user_data["password"]),
+        role=user_data.get("role", "host"),
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return {"id": str(db_user.id), "email": db_user.email, "name": db_user.name, "role": db_user.role}
+
+
 @router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)

@@ -36,6 +36,9 @@ class KimiClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._api_key = os.environ.get("KIMI_API_KEY")
+
+    def _ensure_api_key(self) -> None:
+        """Validate that an API key is configured before making a request."""
         if not self._api_key:
             raise RuntimeError(
                 "KIMI_API_KEY environment variable not set. "
@@ -61,6 +64,8 @@ class KimiClient:
     def chat(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Send a chat completion request and return the response text."""
         import urllib.request
+
+        self._ensure_api_key()
 
         messages = []
         if system_prompt:
@@ -100,6 +105,8 @@ class KimiClient:
         """Send a chat completion with tool calling support."""
         import urllib.request
 
+        self._ensure_api_key()
+
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
@@ -132,6 +139,8 @@ class KimiClient:
 
     def health_check(self) -> Dict[str, Any]:
         """Check if the Kimi API is reachable."""
+        if not self._api_key:
+            return {"status": "unavailable", "reason": "KIMI_API_KEY not set"}
         try:
             import urllib.request
             req = urllib.request.Request(
